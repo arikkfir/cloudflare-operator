@@ -1,0 +1,17 @@
+name: Build
+on:
+  push:
+    branches: ['**']
+jobs:
+  build:
+    runs-on: self-hosted
+    env:
+      IMAGE: europe-docker.pkg.dev/arikkfir/public/cloudflare-operator
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - uses: actions/checkout@v2
+      - run: make test
+      - run: docker build -t ${IMAGE}:${GITHUB_SHA} .
+      - run: docker push ${IMAGE}:${GITHUB_SHA}

@@ -1,0 +1,11 @@
+apiVersion: cloudflare-operator.k8s.kfirs.com/v1
+kind: DNSRecord
+metadata:
+  name: sample-record
+spec:
+  zone: example.com
+  type: A
+  name: www
+  content: 1.2.3.4
+  ttl: 300
+  proxied: true
