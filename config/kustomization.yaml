@@ -1,3 +1,4 @@
 resources:
-- crd/bases/syncer.k8s.kfirs.com_syncbindings.yaml
+- crd/bases/cloudflare-operator.k8s.kfirs.com_apikeys.yaml
+- crd/bases/cloudflare-operator.k8s.kfirs.com_dnsrecords.yaml
 - rbac/role.yaml
