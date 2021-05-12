@@ -6,26 +6,51 @@ import (
 	cfv1 "github.com/arikkfir/cloudflare-operator/api/v1"
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/go-logr/logr"
-	"k8s.io/client-go/dynamic"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 	"time"
 )
 
 const SyncInterval = "1m"
 
 type looper struct {
-	log           logr.Logger
-	dnsRecord     *cfv1.DNSRecord
-	dynamicClient dynamic.Interface
-	stopChannel   chan struct{}
-	apiKey        string
-	apiEmail      string
+	log         logr.Logger
+	dnsRecord   *cfv1.DNSRecord
+	client      client.Client
+	stopChannel chan struct{}
+}
+
+func (l *looper) getAPIKey(ctx context.Context) (*cfv1.APIKey, error) {
+	var apiKeyNamespace, apiKeyName string
+	apiKeyTokens := strings.SplitN(l.dnsRecord.Spec.APIKey, "/", 2)
+	if len(apiKeyTokens) == 2 {
+		apiKeyNamespace = apiKeyTokens[0]
+		apiKeyName = apiKeyTokens[1]
+	} else {
+		apiKeyNamespace = l.dnsRecord.Namespace
+		apiKeyName = apiKeyTokens[0]
+	}
+
+	api := &cfv1.APIKey{}
+	err := l.client.Get(ctx, client.ObjectKey{Namespace: apiKeyNamespace, Name: apiKeyName}, api)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find APIKey '%s': %w", l.dnsRecord.Spec.APIKey, err)
+	}
+
+	return api, nil
 }
 
 func (l *looper) sync(ctx context.Context) {
+	apiKey, err := l.getAPIKey(ctx)
+	if err != nil {
+		l.log.V(1).Error(err, "Failed finding APIKey")
+		return
+	}
+
 	dnsrec := l.dnsRecord
 
 	// Construct a new API object
-	api, err := cloudflare.New(l.apiKey, l.apiEmail)
+	api, err := cloudflare.New(apiKey.Spec.Key, apiKey.Spec.Email)
 	if err != nil {
 		l.log.V(1).Error(err, "Failed creating Cloudflare client")
 		return

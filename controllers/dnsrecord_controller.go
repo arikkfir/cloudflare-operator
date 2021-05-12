@@ -106,9 +106,9 @@ func (r *DNSRecordReconciler) ensureLooperFor(dnsrec *cfv1.DNSRecord) error {
 		return nil
 	} else {
 		l = &looper{
-			log:           r.log.WithValues("dnsrecord", dnsrec.Namespace+"/"+dnsrec.Name),
-			dnsRecord:     dnsrec,
-			dynamicClient: r.dynamicClient,
+			log:       r.log.WithValues("dnsrecord", dnsrec.Namespace+"/"+dnsrec.Name),
+			dnsRecord: dnsrec,
+			client:    r.client,
 		}
 		r.loops[key] = l
 		err := l.start()
