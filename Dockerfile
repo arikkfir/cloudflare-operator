@@ -7,7 +7,7 @@ COPY main.go main.go
 COPY api/ api/
 COPY controllers/ controllers/
 # TODO: use make for "go build" command
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -a -o syncer main.go
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -a -o cloudflare-operator main.go
 
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
