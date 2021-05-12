@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sample-apitoken
+type: Opaque
+data:
+  api-token: your_api_token_base64_encoded_here
+---
+apiVersion: cloudflare-operator.k8s.kfirs.com/v1
+kind: DNSRecord
+metadata:
+  name: sample-record
+spec:
+  zone: example.com
+  type: A
+  name: www.example.com
+  content: 1.2.3.4
+  ttl: 300
+  proxied: true
+  apiToken:
+    key: api-token
+    secret: sample-apitoken

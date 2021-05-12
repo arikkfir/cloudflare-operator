@@ -36,8 +36,16 @@ spec:
           spec:
             description: DNSRecordSpec defines the desired state of DNSRecord
             properties:
-              apiKey:
-                type: string
+              apiToken:
+                properties:
+                  key:
+                    type: string
+                  secret:
+                    type: string
+                required:
+                - key
+                - secret
+                type: object
               content:
                 type: string
               name:
@@ -53,7 +61,7 @@ spec:
               zone:
                 type: string
             required:
-            - apiKey
+            - apiToken
             - content
             - name
             - ttl

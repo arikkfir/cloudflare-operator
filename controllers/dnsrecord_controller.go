@@ -23,6 +23,7 @@ type DNSRecordReconciler struct {
 	loops         map[string]*looper
 }
 
+//+kubebuilder:rbac:groups=v1,resources=secrets,verbs=get;list
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/finalizers,verbs=update
@@ -94,6 +95,7 @@ func (r *DNSRecordReconciler) ensureLooperFor(dnsrec *cfv1.DNSRecord) error {
 	key := dnsrec.Namespace + "/" + dnsrec.Name
 	l, ok := r.loops[key]
 	if ok {
+		l.log.V(1).Info("Restarting sync loop")
 		err := l.stop()
 		if err != nil {
 			return fmt.Errorf("failed stopping looper for '%s/%s': %w", dnsrec.GetNamespace(), dnsrec.GetName(), err)
@@ -125,6 +127,7 @@ func (r *DNSRecordReconciler) removeLooperFor(binding *cfv1.DNSRecord) error {
 	key := binding.Namespace + "/" + binding.Name
 	looper, ok := r.loops[key]
 	if ok {
+		r.log.V(1).Info("Stopping sync loop")
 		err := looper.stop()
 		if err != nil {
 			return fmt.Errorf("failed stopping binding reconciliation loop: %w", err)

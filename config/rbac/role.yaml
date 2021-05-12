@@ -32,3 +32,10 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - v1
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list

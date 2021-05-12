@@ -6,6 +6,7 @@ import (
 	cfv1 "github.com/arikkfir/cloudflare-operator/api/v1"
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/go-logr/logr"
+	v1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
@@ -20,28 +21,34 @@ type looper struct {
 	stopChannel chan struct{}
 }
 
-func (l *looper) getAPIKey(ctx context.Context) (*cfv1.APIKey, error) {
-	var apiKeyNamespace, apiKeyName string
-	apiKeyTokens := strings.SplitN(l.dnsRecord.Spec.APIKey, "/", 2)
-	if len(apiKeyTokens) == 2 {
-		apiKeyNamespace = apiKeyTokens[0]
-		apiKeyName = apiKeyTokens[1]
+func (l *looper) getAPIToken(ctx context.Context) (*string, error) {
+	var secretNamespace, secretName string
+	secretTokens := strings.SplitN(l.dnsRecord.Spec.APIToken.Secret, "/", 2)
+	if len(secretTokens) == 2 {
+		secretNamespace = secretTokens[0]
+		secretName = secretTokens[1]
 	} else {
-		apiKeyNamespace = l.dnsRecord.Namespace
-		apiKeyName = apiKeyTokens[0]
+		secretNamespace = l.dnsRecord.Namespace
+		secretName = secretTokens[0]
 	}
 
-	api := &cfv1.APIKey{}
-	err := l.client.Get(ctx, client.ObjectKey{Namespace: apiKeyNamespace, Name: apiKeyName}, api)
+	secret := &v1.Secret{}
+	err := l.client.Get(ctx, client.ObjectKey{Namespace: secretNamespace, Name: secretName}, secret)
 	if err != nil {
-		return nil, fmt.Errorf("failed to find APIKey '%s': %w", l.dnsRecord.Spec.APIKey, err)
+		return nil, fmt.Errorf("failed to find secret '%s': %w", l.dnsRecord.Spec.APIToken.Secret, err)
 	}
 
-	return api, nil
+	token, ok := secret.Data[l.dnsRecord.Spec.APIToken.Key]
+	if !ok {
+		return nil, fmt.Errorf("failed to find key '%s' in secret '%s': %w", l.dnsRecord.Spec.APIToken.Key, l.dnsRecord.Spec.APIToken.Secret, err)
+	}
+
+	tokenString := string(token)
+	return &tokenString, nil
 }
 
 func (l *looper) sync(ctx context.Context) {
-	apiKey, err := l.getAPIKey(ctx)
+	apiToken, err := l.getAPIToken(ctx)
 	if err != nil {
 		l.log.V(1).Error(err, "Failed finding APIKey")
 		return
@@ -50,7 +57,7 @@ func (l *looper) sync(ctx context.Context) {
 	dnsrec := l.dnsRecord
 
 	// Construct a new API object
-	api, err := cloudflare.New(apiKey.Spec.Key, apiKey.Spec.Email)
+	api, err := cloudflare.NewWithAPIToken(*apiToken)
 	if err != nil {
 		l.log.V(1).Error(err, "Failed creating Cloudflare client")
 		return
@@ -72,6 +79,7 @@ func (l *looper) sync(ctx context.Context) {
 	}
 
 	if len(records) == 0 {
+		l.log.V(1).Info("DNS record not found, creating")
 		_, err := api.CreateDNSRecord(ctx, zoneID, cloudflare.DNSRecord{
 			Type:     dnsrec.Spec.Type,
 			Name:     dnsrec.Spec.Name,
@@ -87,7 +95,27 @@ func (l *looper) sync(ctx context.Context) {
 		l.log.V(3).Info("Created record")
 	} else if len(records) == 1 {
 		cfRec := records[0]
-		if cfRec.Content != dnsrec.Spec.Content || cfRec.Proxied != dnsrec.Spec.Proxied || cfRec.TTL != dnsrec.Spec.TTL || cfRec.Priority != dnsrec.Spec.Priority {
+		diff := false
+		if cfRec.Content != dnsrec.Spec.Content {
+			diff = true
+		}
+		if cfRec.Proxied == nil && dnsrec.Spec.Proxied != nil || cfRec.Proxied != nil && dnsrec.Spec.Proxied == nil {
+			diff = true
+		}
+		if cfRec.Proxied != nil && dnsrec.Spec.Proxied != nil && *cfRec.Proxied != *dnsrec.Spec.Proxied {
+			diff = true
+		}
+		if cfRec.Proxied != nil && dnsrec.Spec.Proxied != nil && !*cfRec.Proxied && cfRec.TTL != dnsrec.Spec.TTL {
+			diff = true
+		}
+		if cfRec.Priority == nil && dnsrec.Spec.Priority != nil || cfRec.Priority != nil && dnsrec.Spec.Priority == nil {
+			diff = true
+		}
+		if cfRec.Priority != nil && dnsrec.Spec.Priority != nil && *cfRec.Priority != *dnsrec.Spec.Priority {
+			diff = true
+		}
+		if diff {
+			l.log.V(1).Info("DNS record not up to date, syncing")
 			err := api.UpdateDNSRecord(ctx, zoneID, records[0].ID, cloudflare.DNSRecord{
 				Type:     dnsrec.Spec.Type,
 				Name:     dnsrec.Spec.Name,
@@ -125,7 +153,6 @@ func (l *looper) start() error {
 		for {
 			select {
 			case <-done:
-				l.log.V(1).Info("Stopping sync loop")
 				return
 			case _ = <-ticker.C:
 				ctx := context.TODO()
