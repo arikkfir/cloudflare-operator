@@ -46,16 +46,16 @@ run: manifests generate fmt vet ## Run a controller from your host.
 
 ##@ Deployment
 
-install: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config | kubectl apply -f -
+install-crd: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
 
-uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
-	$(KUSTOMIZE) build config | kubectl delete -f -
+uninstall-crd: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl delete -f -
 
-install-samples: install ## Install samples into the K8s cluster specified in ~/.kube/config.
+install-samples: install-crd ## Install samples into the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/samples | kubectl apply -f -
 
-uninstall-samples: install ## Uninstall samples from the K8s cluster specified in ~/.kube/config.
+uninstall-samples: ## Uninstall samples from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/samples | kubectl delete -f -
 
 ##@ Tools
