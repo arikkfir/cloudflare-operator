@@ -15,21 +15,23 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
+      - uses: actions/checkout@v2
       - uses: actions/cache@v2
         env:
           cache-name: cache-go-modules
         with:
           path: ${GOPATH}
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.mod') }}
-      - uses: actions/checkout@v2
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.sum') }}
       - run: make test
       - run: docker build -t ${IMAGE}:${GITHUB_SHA} .
       - run: docker push ${IMAGE}:${GITHUB_SHA}
+        # TODO: cache docker images too
   tag-latest:
     runs-on: self-hosted
     needs: [ build ]
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
+      # TODO: cache docker images too
       - run: docker pull ${IMAGE}:${GITHUB_SHA}
       - run: docker tag ${IMAGE}:${GITHUB_SHA} ${IMAGE}:latest
       - run: docker push ${IMAGE}:latest
