@@ -9,6 +9,8 @@ env:
 jobs:
   build:
     runs-on: self-hosted
+    env:
+      GOPATH: ./.gopath
     steps:
       - uses: actions/setup-go@v2
         with:
