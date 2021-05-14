@@ -12,17 +12,28 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}/.gopath
     steps:
+      # SETUP GO
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
-      - run: go clean -modcache # remove any existing ${GOPATH}/pkg packages; must be done like so, as these files are read-only
-      - uses: actions/checkout@v2
+      - run: go clean -modcache
+      - id: go-cache-paths
+        run: |
+          echo "::set-output name=go-build::$(go env GOCACHE)"
+          echo "::set-output name=go-mod::$(go env GOMODCACHE)"
       - uses: actions/cache@v2
-        env:
-          cache-name: cache-go-modules
         with:
-          path: ${{ github.workspace }}/.gopath
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.sum') }}
+          path: ${{ steps.go-cache-paths.outputs.go-build }}
+          key: ${{ runner.os }}-go-build-${{ hashFiles('**/go.sum') }}
+      - uses: actions/cache@v2
+        with:
+          path: ${{ steps.go-cache-paths.outputs.go-mod }}
+          key: ${{ runner.os }}-go-mod-${{ hashFiles('**/go.sum') }}
+
+      # CHECKOUT
+      - uses: actions/checkout@v2
+
+      # TEST & BUILD
       - run: make test
       - run: docker build -t ${IMAGE}:${GITHUB_SHA} .
       - run: docker push ${IMAGE}:${GITHUB_SHA}
