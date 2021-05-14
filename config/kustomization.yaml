@@ -4,4 +4,4 @@ resources:
   - crd/bases/cloudflare-operator.k8s.kfirs.com_dnsrecords.yaml
   - rbac/role.yaml
   - rbac/binding.yaml
-  - deployment/deploy.yaml
+  - deployment/deployment.yaml
