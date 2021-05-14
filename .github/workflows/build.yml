@@ -10,7 +10,7 @@ jobs:
   build:
     runs-on: self-hosted
     env:
-      GOPATH: ./.gopath
+      GOPATH: ${GITHUB_WORKSPACE}/.gopath
     steps:
       - uses: actions/setup-go@v2
         with:
