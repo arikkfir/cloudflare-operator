@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflare-operator
+  labels:
+    app: cloudflare-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudflare-operator
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "8080"
+        prometheus.io/scrape: "true"
+      labels:
+        app: cloudflare-operator
+    spec:
+      containers:
+        - name: cloudflare-operator
+          image: europe-docker.pkg.dev/arikkfir/public/cloudflare-operator:latest
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+          ports:
+            - containerPort: 8080
+              name: metrics
+            - containerPort: 8081
+              name: healthz
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+      serviceAccountName: cloudflare-operator
