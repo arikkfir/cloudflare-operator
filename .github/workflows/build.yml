@@ -1,12 +1,14 @@
 name: Build
 on:
   push:
-    branches: ['**']
+    branches: [ '**' ]
+concurrency:
+  group: ${{ github.ref }}
+env:
+  IMAGE: europe-docker.pkg.dev/arikkfir/public/cloudflare-operator
 jobs:
   build:
     runs-on: self-hosted
-    env:
-      IMAGE: europe-docker.pkg.dev/arikkfir/public/cloudflare-operator
     steps:
       - uses: actions/setup-go@v2
         with:
