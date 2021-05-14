@@ -21,7 +21,7 @@ jobs:
         env:
           cache-name: cache-go-modules
         with:
-          path: ${GOPATH}
+          path: ${{ github.workspace }}/.gopath
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.sum') }}
       - run: make test
       - run: docker build -t ${IMAGE}:${GITHUB_SHA} .
