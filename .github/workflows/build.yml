@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
-      - run: go clean -modcache # remove any existing ${GOPATH}/pkg packages
+      - run: go clean -modcache # remove any existing ${GOPATH}/pkg packages; must be done like so, as these files are read-only
       - uses: actions/checkout@v2
       - uses: actions/cache@v2
         env:
@@ -26,13 +26,11 @@ jobs:
       - run: make test
       - run: docker build -t ${IMAGE}:${GITHUB_SHA} .
       - run: docker push ${IMAGE}:${GITHUB_SHA}
-        # TODO: cache docker images too
   tag-latest:
     runs-on: self-hosted
     needs: [ build ]
     if: ${{ github.ref == 'refs/heads/main' }}
     steps:
-      # TODO: cache docker images too
       - run: docker pull ${IMAGE}:${GITHUB_SHA}
       - run: docker tag ${IMAGE}:${GITHUB_SHA} ${IMAGE}:latest
       - run: docker push ${IMAGE}:latest
