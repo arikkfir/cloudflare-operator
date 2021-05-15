@@ -169,3 +169,46 @@ func (l *looper) stop() error {
 	}
 	return nil
 }
+
+func (l *looper) delete(ctx context.Context) {
+	apiToken, err := l.getAPIToken(ctx)
+	if err != nil {
+		l.log.V(1).Error(err, "Failed finding APIKey")
+		return
+	}
+
+	dnsrec := l.dnsRecord
+
+	// Construct a new API object
+	api, err := cloudflare.NewWithAPIToken(*apiToken)
+	if err != nil {
+		l.log.V(1).Error(err, "Failed creating Cloudflare client")
+		return
+	}
+
+	zoneID, err := api.ZoneIDByName(dnsrec.Spec.Zone)
+	if err != nil {
+		l.log.V(1).Error(err, "Failed looking up Cloudflare zone", "zone", dnsrec.Spec.Zone)
+		return
+	}
+
+	records, err := api.DNSRecords(ctx, zoneID, cloudflare.DNSRecord{
+		Type: dnsrec.Spec.Type,
+		Name: dnsrec.Spec.Name,
+	})
+	if err != nil {
+		l.log.V(1).Error(err, "Failed listing DNS records")
+		return
+	}
+
+	if len(records) == 1 {
+		l.log.V(1).Info("Deleting DNS record")
+		err := api.DeleteDNSRecord(ctx, zoneID, records[0].ID)
+		if err != nil {
+			l.log.V(1).Error(err, "Failed deleting DNS record")
+			return
+		}
+	} else {
+		l.log.Error(fmt.Errorf("too many records found"), "Too many records", "type", dnsrec.Spec.Type, "name", dnsrec.Spec.Name, "records", records)
+	}
+}

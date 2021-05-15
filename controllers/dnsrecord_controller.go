@@ -49,6 +49,11 @@ func (r *DNSRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 				return ctrl.Result{}, fmt.Errorf("failed deleting DNS record: %w", err)
 			}
 
+			// Delete the DNS record
+			if looper, ok := r.loops[req.Namespace+"/"+req.Name]; ok {
+				looper.delete(ctx)
+			}
+
 			// Remove our finalizer
 			dnsrec.ObjectMeta.Finalizers = removeString(dnsrec.ObjectMeta.Finalizers, looperFinalizerName)
 			if err := r.client.Update(context.Background(), dnsrec); err != nil {
