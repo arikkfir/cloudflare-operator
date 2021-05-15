@@ -25,14 +25,14 @@ rules:
   - apiGroups:
       - cloudflare-operator.k8s.kfirs.com
     resources:
-  - dnsrecords/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - cloudflare-operator.k8s.kfirs.com
-  resources:
-  - dnsrecords/status
-  verbs:
-  - get
-  - patch
+      - dnsrecords/finalizers
+    verbs:
+      - update
+  - apiGroups:
+      - cloudflare-operator.k8s.kfirs.com
+    resources:
+      - dnsrecords/status
+    verbs:
+      - get
+      - patch
   - update
