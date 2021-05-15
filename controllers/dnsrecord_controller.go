@@ -23,8 +23,8 @@ type DNSRecordReconciler struct {
 	loops         map[string]*looper
 }
 
-//+kubebuilder:rbac:groups=,resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords,verbs=get;list;watch
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/finalizers,verbs=update
 
