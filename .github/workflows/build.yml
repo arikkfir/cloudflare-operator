@@ -12,6 +12,7 @@ jobs:
     env:
       GOPATH: ${{ github.workspace }}/.gopath
     steps:
+      - run: chmod -R u+w .
 
       # CHECKOUT
       - uses: actions/checkout@v2
