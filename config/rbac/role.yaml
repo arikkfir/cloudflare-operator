@@ -6,33 +6,33 @@ metadata:
   creationTimestamp: null
   name: cloudflare-operator-role
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - secrets
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cloudflare-operator.k8s.kfirs.com
-    resources:
-      - dnsrecords
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - cloudflare-operator.k8s.kfirs.com
-    resources:
-      - dnsrecords/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - cloudflare-operator.k8s.kfirs.com
-    resources:
-      - dnsrecords/status
-    verbs:
-      - get
-      - patch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cloudflare-operator.k8s.kfirs.com
+  resources:
+  - dnsrecords
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - cloudflare-operator.k8s.kfirs.com
+  resources:
+  - dnsrecords/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - cloudflare-operator.k8s.kfirs.com
+  resources:
+  - dnsrecords/status
+  verbs:
+  - get
+  - patch
   - update
