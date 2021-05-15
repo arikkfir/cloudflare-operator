@@ -7,5 +7,6 @@ Operate Cloudflare resources as Kubernetes objects.
 ## Roadmap
 
 - [x] Add APIKey object
-- [ ] Test using a local cluster
-- [ ] Write automation tests
+- [ ] Add tests that use a local cluster
+- [ ] Detect deletion of `DNSRecord` and delete the associated DNS record
+- [ ] Update `Status` of `DNSRecord` objects
