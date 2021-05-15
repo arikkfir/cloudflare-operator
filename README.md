@@ -10,3 +10,4 @@ Operate Cloudflare resources as Kubernetes objects.
 - [ ] Add tests that use a local cluster
 - [ ] Detect deletion of `DNSRecord` and delete the associated DNS record
 - [ ] Update `Status` of `DNSRecord` objects
+- [ ] Verify thread-safety for DNSRecordReconciler `loops` map

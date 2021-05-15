@@ -31,7 +31,6 @@ type DNSRecordReconciler struct {
 // Reconcile is the reconciliation loop implementation aiming to continuously
 // move the current state of the cluster closer to the desired state, which in
 // the DNSRecord controller's view means ensure the DNS record is synchronized in Cloudflare DNS.
-// TODO: support status
 func (r *DNSRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := r.log.WithValues("dnsrecord", req.NamespacedName)
 
@@ -90,7 +89,6 @@ func (r *DNSRecordReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Register creates or updates the looper associated with the given binding.
-// TODO: ensure thread-safety
 func (r *DNSRecordReconciler) ensureLooperFor(dnsrec *cfv1.DNSRecord) error {
 	key := dnsrec.Namespace + "/" + dnsrec.Name
 	l, ok := r.loops[key]
@@ -122,7 +120,6 @@ func (r *DNSRecordReconciler) ensureLooperFor(dnsrec *cfv1.DNSRecord) error {
 }
 
 // Unregister stops & removes the looper associated with the given binding.
-// TODO: ensure thread-safety
 func (r *DNSRecordReconciler) removeLooperFor(binding *cfv1.DNSRecord) error {
 	key := binding.Namespace + "/" + binding.Name
 	looper, ok := r.loops[key]
