@@ -56,7 +56,7 @@ func (r *DNSRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 			// Remove our finalizer
 			dnsrec.ObjectMeta.Finalizers = removeString(dnsrec.ObjectMeta.Finalizers, looperFinalizerName)
-			if err := r.client.Update(context.Background(), dnsrec); err != nil {
+			if err := r.client.Update(ctx, dnsrec); err != nil {
 				return ctrl.Result{}, fmt.Errorf("failed removing finalizer: %w", err)
 			}
 
@@ -69,7 +69,7 @@ func (r *DNSRecordReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	// Object is not being deleted! but ensure our finalizer is listed
 	if !containsString(dnsrec.ObjectMeta.Finalizers, looperFinalizerName) {
 		dnsrec.ObjectMeta.Finalizers = append(dnsrec.ObjectMeta.Finalizers, looperFinalizerName)
-		if err := r.client.Update(context.Background(), dnsrec); err != nil {
+		if err := r.client.Update(ctx, dnsrec); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed adding finalizer: %w", err)
 		}
 	}
