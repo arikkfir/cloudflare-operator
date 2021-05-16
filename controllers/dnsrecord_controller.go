@@ -24,9 +24,9 @@ type DNSRecordReconciler struct {
 }
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch
-//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords,verbs=get;list;watch
+//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords,verbs=get;list;watch;update;patch
 //+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/finalizers,verbs=update
+//+kubebuilder:rbac:groups=cloudflare-operator.k8s.kfirs.com,resources=dnsrecords/finalizers,verbs=update;patch
 
 // Reconcile is the reconciliation loop implementation aiming to continuously
 // move the current state of the cluster closer to the desired state, which in
