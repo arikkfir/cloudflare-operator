@@ -21,12 +21,15 @@ rules:
   verbs:
   - get
   - list
+  - patch
+  - update
   - watch
 - apiGroups:
   - cloudflare-operator.k8s.kfirs.com
   resources:
   - dnsrecords/finalizers
   verbs:
+  - patch
   - update
 - apiGroups:
   - cloudflare-operator.k8s.kfirs.com
