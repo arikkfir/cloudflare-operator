@@ -10,5 +10,5 @@ Operate Cloudflare resources as Kubernetes objects.
 - [ ] Support custom sync interval for `DNSRecord` objects
 - [ ] Add tests that use a local cluster
 - [x] Detect deletion of `DNSRecord` and delete the associated DNS record
-- [ ] Update `Status` of `DNSRecord` objects
+- [x] Update `Status` of `DNSRecord` objects
 - [ ] Verify thread-safety for DNSRecordReconciler `loops` map
