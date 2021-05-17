@@ -22,7 +22,10 @@ type DNSRecordSpec struct {
 }
 
 // DNSRecordStatus defines the observed state of DNSRecord
-type DNSRecordStatus struct{}
+type DNSRecordStatus struct {
+	// Represents the observations of a DNSRecord current state.
+	Conditions []metav1.Condition `json:"conditions,omitempty" patchStrategy:"merge" patchMergeKey:"type" protobuf:"bytes,1,rep,name=conditions"`
+}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

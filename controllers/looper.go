@@ -7,6 +7,7 @@ import (
 	"github.com/cloudflare/cloudflare-go"
 	"github.com/go-logr/logr"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 	"time"
@@ -47,10 +48,14 @@ func (l *looper) getAPIToken(ctx context.Context) (*string, error) {
 	return &tokenString, nil
 }
 
+func (l *looper) setCondition(ctx context.Context, status metav1.ConditionStatus, reason string, message string) {
+	setCondition(ctx, l.client, l.dnsRecord, l.log, status, reason, message)
+}
+
 func (l *looper) sync(ctx context.Context) {
 	apiToken, err := l.getAPIToken(ctx)
 	if err != nil {
-		l.log.V(1).Error(err, "Failed finding APIKey")
+		l.setCondition(ctx, "Unknown", "APITokenMissing", fmt.Sprintf("Failed to get API token: %s", err))
 		return
 	}
 
@@ -59,13 +64,13 @@ func (l *looper) sync(ctx context.Context) {
 	// Construct a new API object
 	api, err := cloudflare.NewWithAPIToken(*apiToken)
 	if err != nil {
-		l.log.V(1).Error(err, "Failed creating Cloudflare client")
+		l.setCondition(ctx, "Unknown", "CloudflareAuthFailure", fmt.Sprintf("Failed to authenticate to Cloudflare: %s", err))
 		return
 	}
 
 	zoneID, err := api.ZoneIDByName(dnsrec.Spec.Zone)
 	if err != nil {
-		l.log.V(1).Error(err, "Failed looking up Cloudflare zone", "zone", dnsrec.Spec.Zone)
+		l.setCondition(ctx, "Unknown", "ZoneNotFound", fmt.Sprintf("Failed to find Cloudflare zone: %s", err))
 		return
 	}
 
@@ -74,13 +79,14 @@ func (l *looper) sync(ctx context.Context) {
 		Name: dnsrec.Spec.Name,
 	})
 	if err != nil {
-		l.log.V(1).Error(err, "Failed listing DNS records")
+		l.setCondition(ctx, "Unknown", "FailedListingRecords", fmt.Sprintf("Failed to list DNS records in zone: %s", err))
 		return
 	}
 
 	if len(records) == 0 {
-		l.log.V(1).Info("DNS record not found, creating")
-		_, err := api.CreateDNSRecord(ctx, zoneID, cloudflare.DNSRecord{
+		l.setCondition(ctx, "False", "RecordNotFound", "DNS record not found")
+
+		_, err = api.CreateDNSRecord(ctx, zoneID, cloudflare.DNSRecord{
 			Type:     dnsrec.Spec.Type,
 			Name:     dnsrec.Spec.Name,
 			Content:  dnsrec.Spec.Content,
@@ -89,10 +95,10 @@ func (l *looper) sync(ctx context.Context) {
 			Priority: dnsrec.Spec.Priority,
 		})
 		if err != nil {
-			l.log.V(1).Error(err, "Failed creating DNS record")
-			return
+			l.setCondition(ctx, "False", "RecordCreationFailed", fmt.Sprintf("Failed to create DNS record: %s", err))
+		} else {
+			l.setCondition(ctx, "True", "RecordCreated", "DNS record created")
 		}
-		l.log.V(3).Info("Created record")
 	} else if len(records) == 1 {
 		cfRec := records[0]
 		diff := false
@@ -115,8 +121,9 @@ func (l *looper) sync(ctx context.Context) {
 			diff = true
 		}
 		if diff {
-			l.log.V(1).Info("DNS record not up to date, syncing")
-			err := api.UpdateDNSRecord(ctx, zoneID, records[0].ID, cloudflare.DNSRecord{
+			l.setCondition(ctx, "False", "StaleRecord", "DNS record is out of sync")
+
+			err = api.UpdateDNSRecord(ctx, zoneID, records[0].ID, cloudflare.DNSRecord{
 				Type:     dnsrec.Spec.Type,
 				Name:     dnsrec.Spec.Name,
 				Content:  dnsrec.Spec.Content,
@@ -125,13 +132,15 @@ func (l *looper) sync(ctx context.Context) {
 				Priority: dnsrec.Spec.Priority,
 			})
 			if err != nil {
-				l.log.V(1).Error(err, "Failed updating DNS record")
-				return
+				l.setCondition(ctx, "False", "RecordUpdateFailed", fmt.Sprintf("Failed to update DNS record: %s", err))
+			} else {
+				l.setCondition(ctx, "True", "RecordUpdated", "")
 			}
-			l.log.V(3).Info("Updated record")
+		} else {
+			l.setCondition(ctx, "True", "RecordUpToDate", "DNS record up to date")
 		}
 	} else {
-		l.log.Error(fmt.Errorf("too many records found"), "Too many records", "type", dnsrec.Spec.Type, "name", dnsrec.Spec.Name, "records", records)
+		l.setCondition(ctx, "Unknown", "TooManyRecordsFound", "Too many DNS records matched this record spec (should not happen)")
 	}
 }
 
@@ -140,8 +149,11 @@ func (l *looper) start() error {
 		return nil
 	}
 
+	l.setCondition(context.Background(), "Unknown", "StartingSyncer", "Starting reconciliation loop")
+
 	interval, err := time.ParseDuration(SyncInterval)
 	if err != nil {
+		l.setCondition(context.Background(), "Unknown", "FailedToStartSyncer", fmt.Sprintf("Failed to start the reconciliation loop: %s", err))
 		return fmt.Errorf("invalid duration '%s': %w", SyncInterval, err)
 	}
 
@@ -153,10 +165,10 @@ func (l *looper) start() error {
 		for {
 			select {
 			case <-done:
+				l.setCondition(context.Background(), "Unknown", "SyncerStopped", "Stopped reconciliation loop")
 				return
 			case _ = <-ticker.C:
-				ctx := context.TODO()
-				l.sync(ctx)
+				l.sync(context.TODO())
 			}
 		}
 	}(l.stopChannel, ticker)
@@ -206,7 +218,8 @@ func (l *looper) delete(ctx context.Context) {
 		err := api.DeleteDNSRecord(ctx, zoneID, records[0].ID)
 		if err != nil {
 			l.log.V(1).Error(err, "Failed deleting DNS record")
-			return
+		} else {
+			l.setCondition(ctx, "False", "RecordDeleted", "Deleted DNS record in Cloudflare zone")
 		}
 	} else {
 		l.log.Error(fmt.Errorf("too many records found"), "Too many records", "type", dnsrec.Spec.Type, "name", dnsrec.Spec.Name, "records", records)
