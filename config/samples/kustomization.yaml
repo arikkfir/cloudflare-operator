@@ -1,4 +1,0 @@
-## Append samples you want in your CSV to this file as resources ##
-resources:
-- cloudflare-operator.k8s.kfirs.com_dnsrecord.yaml
-#+kubebuilder:scaffold:manifestskustomizesamples

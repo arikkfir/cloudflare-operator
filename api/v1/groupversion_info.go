@@ -1,6 +1,6 @@
-// Package v1 contains API Schema definitions for the cloudflare-operator v1 API group
+// Package v1 contains API Schema definitions for the dns v1 API group
 //+kubebuilder:object:generate=true
-//+groupName=cloudflare-operator.k8s.kfirs.com
+//+groupName=dns.cloudflare.k8s.kfirs.com
 package v1
 
 import (
@@ -8,14 +8,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
-const (
-	Group   = "cloudflare-operator.k8s.kfirs.com"
-	Version = "v1"
-)
-
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: Group, Version: Version}
+	GroupVersion = schema.GroupVersion{Group: "dns.cloudflare.k8s.kfirs.com", Version: "v1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

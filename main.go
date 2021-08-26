@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"go.uber.org/zap/zapcore"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -16,7 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	cfv1 "github.com/arikkfir/cloudflare-operator/api/v1"
+	dnsv1 "github.com/arikkfir/cloudflare-operator/api/v1"
 	"github.com/arikkfir/cloudflare-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
@@ -29,7 +28,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(cfv1.AddToScheme(scheme))
+	utilruntime.Must(dnsv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -43,13 +42,7 @@ func main() {
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
 	opts := zap.Options{
-		Development: false,
-		EncoderConfigOptions: []zap.EncoderConfigOption{
-			func(ec *zapcore.EncoderConfig){
-				ec.LevelKey = "severity"
-				ec.MessageKey = "message"
-			},
-		},
+		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
@@ -62,15 +55,15 @@ func main() {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "syncer.k8s.kfirs.com",
+		LeaderElectionID:       "41c95afe.cloudflare.k8s.kfirs.com",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
 
-	if err = (&controllers.DNSRecordReconciler{}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "DNSRecord")
+	if err = (&controllers.RecordReconciler{}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Record")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
@@ -84,7 +77,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("Starting manager")
+	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)

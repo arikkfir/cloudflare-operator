@@ -1,0 +1,7 @@
+apiVersion: dns.cloudflare.k8s.kfirs.com/v1
+kind: Record
+metadata:
+  name: record-sample
+spec:
+  # Add fields here
+  foo: bar

@@ -1,40 +1,24 @@
-
----
+# permissions for end users to edit records.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  creationTimestamp: null
-  name: manager-role
+  name: record-editor-role
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - secrets
-  verbs:
-  - get
-  - list
-  - watch
 - apiGroups:
   - dns.cloudflare.k8s.kfirs.com
   resources:
   - records
   verbs:
+  - create
+  - delete
   - get
   - list
   - patch
   - update
   - watch
-- apiGroups:
-  - dns.cloudflare.k8s.kfirs.com
-  resources:
-  - records/finalizers
-  verbs:
-  - update
 - apiGroups:
   - dns.cloudflare.k8s.kfirs.com
   resources:
   - records/status
   verbs:
   - get
-  - patch
-  - update
